@@ -1,0 +1,136 @@
+<html>
+    <head>
+        <title>Proyecto Recomendador</title>
+        
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="style.css">
+        <script type="text/javascript" src="node_modules/tau-prolog/modules/core.js"></script>
+        <script type="text/javascript" src="node_modules/tau-prolog/modules/lists.js"></script>
+        <script type="text/javascript" src="node_modules/tau-prolog/modules/promises.js"></script>
+        <script type="text/javascript" src="node_modules/tau-prolog/modules/random.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    </head>
+    <body>
+        
+        <div class="row p-0 m-2">
+            <div class="col-12">
+                <h1 class="title text-center">Evaluador manos de poker</h1>
+            </div>
+            <div class="col-12 input-group">
+                <div class="input-group-prepend ml-1">
+                    <span class="input-group-text" id="basic-addon3">Cantidad de Jugadores</span>
+                </div>
+
+                <select id="catidadJugadoresInput" class="form-control selectpicker validation-field" onchange="setearCantidadJugadores(this.value)">
+                    <option value="Sin seleccionar" selected>Sin seleccionar</option>
+                    <option value="2" selected>2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5" selected>5</option>
+                    <option value="6" selected>6</option>
+                    <option value="7" selected>7</option>
+                    <option value="8" selected>8</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row p-0 m-2" id="seleccion-cartas" hidden="true">
+
+        </div>
+
+        <button hidden="true" class="btn btn-primary m-1" onclick="setearCartasRandomTodos()" id="boton-cartas-random-todos">Cartas Random a Todos</button>
+
+
+
+        <div class="row p-0 m-2" id="cartas-mesa" hidden="true">
+            <div class="col-12 text-center">
+                <h4>Cartas de la Mesa:</h4>
+
+                <button class="btn btn-primary m-1" onclick="setearCartasMesaRandom()" id="boton-cartas-random-mesa">Cartas Random</button>
+
+            </div>
+            <div class="col-4 input-group">
+                <div class="input-group-prepend ml-1">
+                    <span class="input-group-text" id="carta-random-1">Carta 1</span>
+                </div>
+                <select id="carta1-mesa" class="form-control selectpicker validation-field" onchange="onChangeCartaMesa(0,this.value)">
+                </select>
+            </div>
+            <div class="col-4 input-group">
+                <div class="input-group-prepend ml-1">
+                    <span class="input-group-text" id="carta-random-2">Carta 2</span>
+                </div>
+                <select id="carta2-mesa" class="form-control selectpicker validation-field" onchange="onChangeCartaMesa(1,this.value)">
+                </select>
+            </div>
+
+            <div class="col-4 input-group">
+                <div class="input-group-prepend ml-1">
+                    <span class="input-group-text" id="carta-random-3">Carta 3</span>
+                </div>
+                <select id="carta3-mesa" class="form-control selectpicker validation-field" onchange="onChangeCartaMesa(2,this.value)">
+                </select>
+            </div>
+
+            <div class="col-12">
+                <div class="row p-0 mt-2">
+                    <div class="col-6 input-group">
+                        <div class="input-group-prepend ml-1">
+                            <span class="input-group-text" id="carta-random-4">Carta 4</span>
+                        </div>
+                        <select id="carta4-mesa" class="form-control selectpicker validation-field" onchange="onChangeCartaMesa(3,this.value)">
+                        </select>
+                    </div>
+        
+                    <div class="col-6 input-group">
+                        <div class="input-group-prepend ml-1">
+                            <span class="input-group-text" id="carta-random-5">Carta 5</span>
+                        </div>
+                        <select id="carta5-mesa" class="form-control selectpicker validation-field" onchange="onChangeCartaMesa(4,this.value)">
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4 text-center">
+                <button class="btn btn-primary m-1" onclick="obtenerManosDeJugadores()" hidden="true" id="boton-obtener-mano">EVALUAR MANOS</button>
+            </div>
+
+            <div class="col-4 text-center">
+                <button class="btn btn-primary m-1" onclick="evaluarGanador()" id="boton-evaluar-mano">EVALUAR GANADOR</button>
+            </div>
+
+            <div class="col-4 text-center">
+                <button class="btn btn-secondary m-1" onclick="habilitarSeleccionDeCartas()" id="boton-reiniciar-mano">HABILITAR CAMBIO DE CARTAS</button>
+            </div>
+
+
+            <div class="col-12 text-center">
+                <span id="jugador-ganador"></span>
+            </div>
+            
+        </div>
+
+        <script> 
+            // Aquí se establecerá el valor predeterminado al cargar la página en los selects
+            // document.addEventListener("DOMContentLoaded", function() {
+            //     selectDefaultOption("Sin seleccionar","catidadJugadoresInput");
+            // });
+
+            // //seleccion default la  1 del JUGADOR 1 
+            // document.addEventListener("DOMContentLoaded", function() {
+            //     cargarListadosCartasDefault("carta1-jugador1");
+            // });
+
+           
+        </script>
+    
+        <script type="text/javascript" src="prolog-entregable.js"></script>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    </body>
+</html>

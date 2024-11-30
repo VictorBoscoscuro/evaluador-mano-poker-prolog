@@ -1,0 +1,14 @@
+{
+  "name": "javascript-prolog",
+  "version": "1.0.0",
+  "description": "final prolog",
+  "main": "prolog.js",
+  "scripts": {
+    "test": "npm run test"
+  },
+  "author": "julian y victor",
+  "license": "ISC",
+  "dependencies": {
+    "tau-prolog": "^0.3.4"
+  }
+}
