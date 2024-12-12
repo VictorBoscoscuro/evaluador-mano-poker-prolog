@@ -1,0 +1,488 @@
+extraer_numeros_cartas([], []).
+extraer_numeros_cartas([[Valor, _Palo] | T], [Valor | ValoresRestantes]) :-
+    extraer_numeros_cartas(T, ValoresRestantes).
+
+extraer_palos_cartas([], []).
+extraer_palos_cartas([[_Valor, Palo] | T], [Palo | PalosRestantes]) :-
+    extraer_palos_cartas(T, PalosRestantes).
+
+% Función que elimina duplicados de una lista
+eliminar_duplicados([], []).
+eliminar_duplicados([H | T], [H | Rest]) :-
+    select(H, T, Resto),
+    eliminar_duplicados(Resto, Rest).
+eliminar_duplicados([H | T], Rest) :-
+    \+ select(H, T, _),
+    eliminar_duplicados(T, Rest).
+
+% Agrupar cartas
+agrupar_cartas([], []).  % Caso base: si la lista está vacía, no hay grupos.
+agrupar_cartas(Valores, Grupos) :-
+    eliminar_duplicados(Valores, ValoresSinDuplicados),
+    encontrar_cantidad(ValoresSinDuplicados, Valores, Grupos).
+
+
+% Función que encuentra la cantidad de cada valor
+encontrar_cantidad([], _, []).  % Caso base
+encontrar_cantidad([Valor | Resto], Valores, [[Valor, Cantidad] | Grupos]) :-
+    findall(_, member(Valor, Valores), Cartas),
+    length(Cartas, Cantidad),
+    encontrar_cantidad(Resto, Valores, Grupos).
+
+
+comparar_kickers([], [], '0').
+comparar_kickers([K1 | R1], [K2 | R2], Resultado) :-    
+    (K1 > K2 -> Resultado = '1';     
+     K2 > K1 -> Resultado = '2';     
+     comparar_kickers(R1, R2, Resultado)).
+
+seleccionar_trio([], 0).  % Caso base
+seleccionar_trio([[Valor, 3] | _], Valor) :- !.  % Encontramos el trío
+seleccionar_trio([_ | T], Trio) :-
+    seleccionar_trio(T, Trio).  % Buscamos el trío en el resto de la lista
+
+maximo([X], X).  % Si la lista tiene un solo elemento, ese es el máximo
+maximo([X, Y | T], Max) :-
+    X > Y,  % Si X es mayor que Y, el máximo está en la cabeza
+    maximo([X | T], Max).  % Continuamos buscando en el resto de la lista
+maximo([X, Y | T], Max) :-
+    X =< Y,  % Si Y es mayor o igual a X, el máximo está en la cola
+    maximo([Y | T], Max).  % Continuamos buscando en el resto de la lista
+
+
+comparar_valor_escalera(Escalera1, Escalera2, Resultado) :-
+    maximo(Escalera1, Max1),
+    maximo(Escalera2, Max2),
+    (Max1 > Max2 -> Resultado = '1';
+     Max1 < Max2 -> Resultado = '2';
+     Resultado = '0').
+
+eliminar_duplicados_escalera([], []).
+eliminar_duplicados_escalera([H | T], [H | Rest]) :-
+    \+ member(H, T), % Verifica si H no está en el resto de la lista
+    eliminar_duplicados_escalera(T, Rest).
+eliminar_duplicados_escalera([H | T], Rest) :-
+    member(H, T), % Si H está en el resto, lo omite
+    eliminar_duplicados_escalera(T, Rest).
+
+
+% Comprobar si una lista tiene cinco valores consecutivos
+es_escalera([V1, V2, V3, V4, V5]) :-
+    V1 is V2 + 1, V2 is V3 + 1, V3 is V4 + 1, V4 is V5 + 1.
+
+% Ordenar una lista de forma descendente
+ordenar_descendente([], []).
+ordenar_descendente([H | T], ListaOrdenada) :-
+    ordenar_descendente(T, ListaParcial),
+    insertar_descendente(H, ListaParcial, ListaOrdenada).
+
+insertar_descendente(X, [], [X]).
+insertar_descendente(X, [Y | T], [X, Y | T]) :-
+    X >= Y.
+insertar_descendente(X, [Y | T], [Y | R]) :-
+    X < Y,
+    insertar_descendente(X, T, R).
+
+
+% ESCALERA COLOR
+
+% Comprobar si todos los palos de la lista son iguales
+todos_mismo_palo([Palo | Resto]) :-
+    forall(member(Palo, Resto), true).
+
+
+% Filtrar cartas por palo específico
+filtrar_cartas_por_palo([], _, []).
+filtrar_cartas_por_palo([[Valor, Palo] | T], PaloBuscado, [[Valor, Palo] | Rest]) :-
+    Palo = PaloBuscado,
+    filtrar_cartas_por_palo(T, PaloBuscado, Rest).
+filtrar_cartas_por_palo([_ | T], PaloBuscado, Rest) :-
+    filtrar_cartas_por_palo(T, PaloBuscado, Rest).
+
+
+% Buscar una sublista de cinco valores consecutivos y del mismo palo
+sublista_consecutiva_color([V1, V2, V3, V4, V5 | _], [V1, V2, V3, V4, V5]) :-
+    es_escalera([V1, V2, V3, V4, V5]),
+    extraer_palos_cartas([[V1, _], [V2, _], [V3, _], [V4, _], [V5, _]], Palos),
+    todos_mismo_palo(Palos), !.
+sublista_consecutiva_color([_ | Resto], EscaleraColor) :-
+    sublista_consecutiva_color(Resto, EscaleraColor).
+
+% Ajustar el valor del As para que actúe como 1 en escalera color
+ajustar_as_para_escalera_color(Valores, ValoresAjustados) :-
+    (   member(14, Valores),
+        member(2, Valores),
+        member(3, Valores),
+        member(4, Valores),
+        member(5, Valores)
+    ->  select(14, Valores, 1, ValoresAjustados)
+    ;   ValoresAjustados = Valores).
+
+
+
+% Obtener la escalera de color más alta de una lista de valores
+obtener_escalera_color(Mano, EscaleraColor) :-
+    % Filtrar los duplicados y separar por palo
+    eliminar_duplicados_escalera(Mano, SinDuplicados),
+    extraer_palos_cartas(SinDuplicados, Palos),
+    member(Palo, Palos), % Seleccionamos un palo posible
+    filtrar_cartas_por_palo(SinDuplicados, Palo, CartasDePalo), 
+    extraer_numeros_cartas(CartasDePalo, Valores),
+    ajustar_as_para_escalera_color(Valores, ValoresAjustados),
+    ordenar_descendente(ValoresAjustados, ValoresOrdenados),
+    sublista_consecutiva_color(ValoresOrdenados, EscaleraColor), !.
+
+
+comparar_escalera_color(ManoJ1, ManoJ2, Resultado) :-
+    obtener_escalera_color(ManoJ1, EscaleraColor1),
+    obtener_escalera_color(ManoJ2, EscaleraColor2),
+    comparar_valor_escalera(EscaleraColor1, EscaleraColor2, Resultado), !. % Depuración
+
+
+
+
+% POKER
+
+% Agrupar cartas para póker (sin duplicados en los grupos)
+agrupar_cartas_poker([], []).
+agrupar_cartas_poker(Valores, Grupos) :-
+    eliminar_duplicados(Valores, ValoresSinDuplicados),
+    encontrar_cantidad(ValoresSinDuplicados, Valores, GruposSinDuplicados),
+    eliminar_duplicados_grupos(GruposSinDuplicados, Grupos).  % Eliminar duplicados en los grupos
+
+% Eliminar duplicados en la lista de grupos
+eliminar_duplicados_grupos([], []).
+eliminar_duplicados_grupos([G | Resto], [G | RestoSinDuplicados]) :-
+    \+ member(G, Resto),  % Si G no está en el resto, lo añadimos
+    eliminar_duplicados_grupos(Resto, RestoSinDuplicados).
+eliminar_duplicados_grupos([_ | Resto], RestoSinDuplicados) :-
+    eliminar_duplicados_grupos(Resto, RestoSinDuplicados).  % Ignorar duplicados
+
+
+ 
+% Encontrar el kicker más alto que no sea parte del póker
+seleccionar_poker([], 0).  % Caso base
+seleccionar_poker([[Valor, 4] | _], Valor) :- !.  % Encontramos el póker
+seleccionar_poker([_ | T], Poker) :-
+    seleccionar_poker(T, Poker).  % Buscamos el póker en el resto de la lista
+
+% Seleccionar kicker del póker, procesando las cartas restantes
+seleccionar_kicker_poker(Valores, Poker, Kicker) :-
+    exclude(=(Poker), Valores, Restantes),  % Excluir todas las cartas que forman el póker
+    maximo(Restantes, Kicker).  % El kicker es la carta más alta restante
+
+
+obtener_poker(Valores, Poker, Kicker) :-
+    agrupar_cartas_poker(Valores, Grupos),  % Agrupar cartas para póker
+    seleccionar_poker(Grupos, Poker),  % Encontrar el póker
+    seleccionar_kicker_poker(Valores, Poker, Kicker).  % Encontrar el kicker usando las cartas restantes
+
+
+
+% Comparar dos manos con póker
+comparar_poker(ManoJ1, ManoJ2, Resultado) :-
+    extraer_numeros_cartas(ManoJ1, Valores1),
+    extraer_numeros_cartas(ManoJ2, Valores2),
+    obtener_poker(Valores1, Poker1, Kicker1),
+    obtener_poker(Valores2, Poker2, Kicker2),
+    comparar_valor_poker(Poker1, Poker2, Kicker1, Kicker2, Resultado), !.
+
+% Comparar los valores de los póker y los kickers
+comparar_valor_poker(Poker1, Poker2, Kicker1, Kicker2, Resultado) :-
+    (Poker1 > Poker2 -> Resultado = '1';
+     Poker2 > Poker1 -> Resultado = '2';
+     Kicker1 > Kicker2 -> Resultado = '1';
+     Kicker2 > Kicker1 -> Resultado = '2';
+     Resultado = '0').
+
+
+
+% FULLHOUSE
+
+seleccionar_trio_fullhouse([[Valor, 3] | T], MejorTrio) :-
+    seleccionar_trio_fullhouse(T, RestoTrio),
+    MejorTrio is max(Valor, RestoTrio), !.
+seleccionar_trio_fullhouse([_ | T], Trio) :-
+    seleccionar_trio_fullhouse(T, Trio).
+seleccionar_trio_fullhouse([], 0).  % Caso base: si no hay tríos, devolver 0.
+
+
+seleccionar_pareja_fullhouse([], _, 0).  % Caso base
+seleccionar_pareja_fullhouse([[Valor, Cantidad] | T], Trio, MejorPareja) :-
+    Cantidad >= 2, Valor \= Trio,  % Es una pareja válida y no es el trío
+    seleccionar_pareja_fullhouse(T, Trio, ParejaResto),
+    MejorPareja is max(Valor, ParejaResto).  % Seleccionar la pareja más alta
+seleccionar_pareja_fullhouse([_ | T], Trio, Pareja) :-
+    seleccionar_pareja_fullhouse(T, Trio, Pareja).  % Continuamos si no es válida
+
+
+obtener_fullhouse(Valores, Trio, Pareja) :-
+    agrupar_cartas(Valores, Grupos),
+    seleccionar_trio_fullhouse(Grupos, Trio),
+    seleccionar_pareja_fullhouse(Grupos, Trio, Pareja).
+
+% Modificar seleccionar_fullhouse para usar las nuevas funciones
+seleccionar_fullhouse(Grupos, Trio, Pareja) :-
+    seleccionar_trio(Grupos, Trio),  % Usar la nueva función para el trío
+    seleccionar_pareja_fullhouse(Grupos, Trio, Pareja).  % Usar la nueva función para la pareja
+
+% Comparar fullhouse
+comparar_fullhouse(ManoJ1, ManoJ2, Resultado) :-
+    extraer_numeros_cartas(ManoJ1, Valores1),
+    extraer_numeros_cartas(ManoJ2, Valores2),
+    obtener_fullhouse(Valores1, Trio1, Pareja1),
+    obtener_fullhouse(Valores2, Trio2, Pareja2),
+    comparar_valor_fullhouse(Trio1, Trio2, Pareja1, Pareja2, Resultado), !.
+
+% Comparar valores de Full House
+comparar_valor_fullhouse(Trio1, Trio2, Pareja1, Pareja2, Resultado) :-
+    (Trio1 > Trio2 -> Resultado = '1';
+     Trio1 < Trio2 -> Resultado = '2';
+     (Pareja1 > Pareja2 -> Resultado = '1';
+      Pareja1 < Pareja2 -> Resultado = '2';
+      Resultado = '0')).
+
+
+
+
+% COLOR
+
+% Seleccionar las cartas de un determinado palo
+seleccionar_cartas_del_palo([], _, []).
+seleccionar_cartas_del_palo([[Valor, Palo] | T], Palo, [Valor | CartasRestantes]) :-    
+    seleccionar_cartas_del_palo(T, Palo, CartasRestantes).
+seleccionar_cartas_del_palo([[_Valor, OtroPalo] | T], Palo, CartasRestantes) :-    
+    Palo \= OtroPalo,    
+    seleccionar_cartas_del_palo(T, Palo, CartasRestantes).
+
+% Encontrar el palo con más cartas (el color)
+seleccionar_color(Palos, PaloDominante) :-
+    eliminar_duplicados(Palos, PalosUnicos),
+    encontrar_cantidad(PalosUnicos, Palos, GruposDePalos),
+    seleccionar_palo_con_mas_cartas(GruposDePalos, PaloDominante).
+
+seleccionar_palo_con_mas_cartas([[Palo, Cantidad] | Resto], MejorPalo) :-    
+    seleccionar_palo_con_mas_cartas(Resto, Palo, Cantidad, MejorPalo).
+
+seleccionar_palo_con_mas_cartas([], PaloActual, _, PaloActual).
+seleccionar_palo_con_mas_cartas([[Palo, Cantidad] | Resto], PaloActual, CantidadActual, MejorPalo) :-    
+    (Cantidad > CantidadActual -> seleccionar_palo_con_mas_cartas(Resto, Palo, Cantidad, MejorPalo);
+     seleccionar_palo_con_mas_cartas(Resto, PaloActual, CantidadActual, MejorPalo)).
+
+% Obtener el color (cartas del mismo palo) y las 5 cartas más altas
+obtener_color(Mano, Palo, CartasColor) :-    
+    extraer_palos_cartas(Mano, Palos),
+    seleccionar_color(Palos, Palo),  % Encontrar el palo predominante
+    seleccionar_cartas_del_palo(Mano, Palo, CartasDelColor),
+    sort(CartasDelColor, CartasOrdenadas),
+    reverse(CartasOrdenadas, [C1, C2, C3, C4, C5 | _]),  % Tomar las 5 cartas más altas
+    CartasColor = [C1, C2, C3, C4, C5].
+
+% Comparar manos con color
+comparar_color(ManoJ1, ManoJ2, Resultado) :-    
+    obtener_color(ManoJ1, _, CartasColor1),    
+    obtener_color(ManoJ2, _, CartasColor2),    
+    comparar_cartas_color(CartasColor1, CartasColor2, Resultado), !.
+
+% Comparar las cartas de los colores
+comparar_cartas_color([], [], '0').
+comparar_cartas_color([C1 | R1], [C2 | R2], Resultado) :-    
+    (C1 > C2 -> Resultado = '1';     
+     C2 > C1 -> Resultado = '2';     
+     comparar_cartas_color(R1, R2, Resultado)).
+
+
+
+% ESCALERA (revisar)
+
+% Ajustar el valor del As para que actúe como 1
+ajustar_as_para_escalera(Valores, ValoresAjustados) :-
+    (   member(14, Valores),
+        member(2, Valores),
+        member(3, Valores),
+        member(4, Valores),
+        member(5, Valores)
+    ->  select(14, Valores, 1, ValoresAjustados)
+    ;   ValoresAjustados = Valores).
+
+
+% Buscar una sublista de cinco valores consecutivos
+sublista_consecutiva([V1, V2, V3, V4, V5 | _], [V1, V2, V3, V4, V5]) :-
+    es_escalera([V1, V2, V3, V4, V5]),
+    !.
+sublista_consecutiva([_ | Resto], Escalera) :-
+    sublista_consecutiva(Resto, Escalera).
+
+% Obtener la escalera más alta de una lista de valores
+obtener_escalera(Valores, Escalera) :-
+    eliminar_duplicados_escalera(Valores, SinDuplicados),
+    ajustar_as_para_escalera(SinDuplicados, ValoresAjustados),
+    ordenar_descendente(ValoresAjustados, ValoresOrdenados),
+    writeln('Valores ordenados:'), writeln(ValoresOrdenados), % Depuración
+    sublista_consecutiva(ValoresOrdenados, Escalera),
+    writeln('Escalera encontrada:'), writeln(Escalera). % Depuración
+
+
+% Comparar escaleras entre dos manos
+comparar_escalera(ManoJ1, ManoJ2, Resultado) :-
+    extraer_numeros_cartas(ManoJ1, Valores1),
+    writeln('Valores J1:'), writeln(Valores1), % Depuración
+    extraer_numeros_cartas(ManoJ2, Valores2),
+    writeln('Valores J2:'), writeln(Valores2), % Depuración
+    obtener_escalera(Valores1, Escalera1),
+    obtener_escalera(Valores2, Escalera2),
+    comparar_valor_escalera(Escalera1, Escalera2, Resultado),
+    writeln('Resultado:'), writeln(Resultado), !. % Depuración
+
+
+
+% TRIO
+
+obtener_trio(Valores, Trio, Kickers) :-    
+    agrupar_cartas(Valores, Grupos),    
+    seleccionar_trio(Grupos, Trio),  % Encontrar el trío
+    seleccionar_kickers_trio(Valores, Trio, KickersSinOrdenar),
+    sort(KickersSinOrdenar, KickersOrdenados), 
+    reverse(KickersOrdenados, [Kicker1, Kicker2 | _]),  % Seleccionar los dos kickers más altos
+    Kickers = [Kicker1, Kicker2].
+
+% Seleccionar los kickers (cartas que no son parte del trío)
+seleccionar_kickers_trio([], _, []).
+seleccionar_kickers_trio([Valor | T], Trio, [Valor | KickerRest]) :-    
+    Valor \= Trio, !, 
+    seleccionar_kickers_trio(T, Trio, KickerRest).
+seleccionar_kickers_trio([_ | T], Trio, Kickers) :-    
+    seleccionar_kickers_trio(T, Trio, Kickers).
+
+% Comparar manos con trío
+comparar_trio(ManoJ1, ManoJ2, Resultado) :-    
+    extraer_numeros_cartas(ManoJ1, Valores1),    
+    extraer_numeros_cartas(ManoJ2, Valores2),    
+    obtener_trio(Valores1, Trio1, Kickers1),    
+    obtener_trio(Valores2, Trio2, Kickers2),    
+    comparar_valor_trio(Trio1, Trio2, Kickers1, Kickers2, Resultado), !.
+
+% Comparar tríos y luego los kickers si los tríos son iguales
+comparar_valor_trio(Trio1, Trio2, Kickers1, Kickers2, Resultado) :-    
+    (Trio1 > Trio2 -> Resultado = '1';     
+     Trio2 > Trio1 -> Resultado = '2';     
+     comparar_kickers(Kickers1, Kickers2, Resultado)).
+
+
+% DOBLES PAREJAS 
+
+seleccionar_dobles_parejas([], 0, 0).  % Caso base
+seleccionar_dobles_parejas([[Valor, 2], [Valor2, 2] | _], Valor, Valor2) :- 
+    Valor > Valor2, !.
+seleccionar_dobles_parejas([[Valor2, 2], [Valor, 2] | _], Valor, Valor2) :- 
+    Valor2 > Valor, !.
+seleccionar_dobles_parejas([[Valor, 2] | T], Valor, Pareja2) :-    
+    seleccionar_dobles_parejas(T, Pareja2, _).  % Buscamos la segunda pareja en el resto de la lista
+seleccionar_dobles_parejas([_ | T], Pareja1, Pareja2) :-    
+    seleccionar_dobles_parejas(T, Pareja1, Pareja2).  % Buscar ambas parejas en el resto de la lista
+
+% Obtener las dobles parejas y la carta kicker restante
+obtener_dobles_parejas(Valores, Pareja1, Pareja2, Kicker) :-    
+    agrupar_cartas(Valores, Grupos),    
+    seleccionar_dobles_parejas(Grupos, Pareja1, Pareja2),  % Encontrar las dobles parejas
+    seleccionar_kickers_dobles_parejas(Valores, Pareja1, Pareja2, KickersSinOrdenar),  % Encontrar el kicker restante
+    sort(KickersSinOrdenar, KickersOrdenados), 
+    reverse(KickersOrdenados, [Kicker | _]).  % Obtener el kicker más alto
+
+% Seleccionar los kickers (cartas que no son parte de las parejas)
+seleccionar_kickers_dobles_parejas([], _, _, []).
+seleccionar_kickers_dobles_parejas([Valor | T], Pareja1, Pareja2, [Valor | KickerRest]) :-    
+    Valor \= Pareja1, Valor \= Pareja2, !, 
+    seleccionar_kickers_dobles_parejas(T, Pareja1, Pareja2, KickerRest).
+seleccionar_kickers_dobles_parejas([_ | T], Pareja1, Pareja2, Kickers) :-    
+    seleccionar_kickers_dobles_parejas(T, Pareja1, Pareja2, Kickers).
+
+% Comparar dobles parejas
+comparar_dobles_parejas(ManoJ1, ManoJ2, Resultado) :-    
+    extraer_numeros_cartas(ManoJ1, Valores1),    
+    extraer_numeros_cartas(ManoJ2, Valores2),    
+    obtener_dobles_parejas(Valores1, Pareja1_1, Pareja2_1, Kicker1),    
+    obtener_dobles_parejas(Valores2, Pareja1_2, Pareja2_2, Kicker2),    
+    comparar_valor_dobles_parejas(Pareja1_1, Pareja2_1, Pareja1_2, Pareja2_2, Kicker1, Kicker2, Resultado), !.
+
+
+% Comparar las parejas en orden (pareja más alta, luego segunda pareja, luego kicker)
+comparar_valor_dobles_parejas(Pareja1_1, Pareja2_1, Pareja1_2, Pareja2_2, Kicker1, Kicker2, Resultado) :-    
+    (Pareja1_1 > Pareja1_2 -> Resultado = '1';     
+     Pareja1_2 > Pareja1_1 -> Resultado = '2';     
+     Pareja2_1 > Pareja2_2 -> Resultado = '1';     
+     Pareja2_2 > Pareja2_1 -> Resultado = '2';     
+     Kicker1 > Kicker2 -> Resultado = '0';
+     Kicker1 < Kicker2 -> Resultado = '0';
+     Resultado = '0').
+
+
+
+% PAREJA
+
+seleccionar_pareja([], 0).  % Caso base
+seleccionar_pareja([[Valor, 2] | _], Valor) :- !.  % Encontramos la pareja
+seleccionar_pareja([_ | T], Pareja) :-    
+    seleccionar_pareja(T, Pareja).  % Buscamos la pareja en el resto de la lista
+
+obtener_pareja(Valores, Pareja, Kickers) :-
+    agrupar_cartas(Valores, Grupos),
+    seleccionar_pareja(Grupos, Pareja),
+    seleccionar_kickers_pareja(Valores, Pareja, KickersSinOrdenar),
+    sort(KickersSinOrdenar, KickersOrdenados),
+    reverse(KickersOrdenados, KickersOrdenadosDesc),
+    tomar_n_primeros(KickersOrdenadosDesc, 3, Kickers).
+
+% Predicado para tomar los primeros N elementos de una lista
+tomar_n_primeros(_, 0, []) :- !.
+tomar_n_primeros([], _, []) :- !.
+tomar_n_primeros([H | T], N, [H | R]) :-
+    N > 0,
+    N1 is N - 1,
+    tomar_n_primeros(T, N1, R).
+
+
+seleccionar_kickers_pareja([], _, []).
+seleccionar_kickers_pareja([Valor | T], Pareja, [Valor | KickerRest]) :-
+    Valor \= Pareja, !,
+    seleccionar_kickers_pareja(T, Pareja, KickerRest).
+seleccionar_kickers_pareja([_ | T], Pareja, Kickers) :-
+    seleccionar_kickers_pareja(T, Pareja, Kickers).
+
+comparar_pareja(ManoJ1, ManoJ2, Resultado) :-
+    extraer_numeros_cartas(ManoJ1, Valores1),
+    extraer_numeros_cartas(ManoJ2, Valores2),
+    obtener_pareja(Valores1, Pareja1, Kickers1),
+    obtener_pareja(Valores2, Pareja2, Kickers2),
+    comparar_valor_pareja(Pareja1, Pareja2, Kickers1, Kickers2, Resultado), !.
+
+comparar_valor_pareja(Pareja1, Pareja2, Kickers1, Kickers2, Resultado) :-
+    (Pareja1 > Pareja2 -> Resultado = '1';
+     Pareja2 > Pareja1 -> Resultado = '2';
+     comparar_kickers(Kickers1, Kickers2, Resultado)).
+
+
+
+% CARTA ALTA
+
+obtener_cinco_mayores(Valores, CincoMayores) :-    
+    sort(Valores, ValoresOrdenados),   
+    reverse(ValoresOrdenados, ValoresOrdenadosReversos),    
+    sublist(ValoresOrdenadosReversos, CincoMayores, 5).
+
+sublist(Lista, Sublista, N) :-    
+    length(Sublista, N),    
+    append(Sublista, _, Lista).
+
+comparar_carta_alta(ManoJ1, ManoJ2, Resultado) :-    
+    extraer_numeros_cartas(ManoJ1, Valores1),    
+    extraer_numeros_cartas(ManoJ2, Valores2),    
+    obtener_cinco_mayores(Valores1, CincoMayores1),    
+    obtener_cinco_mayores(Valores2, CincoMayores2),    
+    comparar_cinco_mayores(CincoMayores1, CincoMayores2, Resultado), !.
+
+comparar_cinco_mayores([], [], '0').
+comparar_cinco_mayores([C1 | R1], [C2 | R2], Resultado) :-    
+    (C1 > C2 -> Resultado = '1';     
+     C2 > C1 -> Resultado = '2';     
+     comparar_cinco_mayores(R1, R2, Resultado)).

@@ -1,0 +1,82 @@
+mano([Carta1|Color1], [Carta2|Color2], [Carta3|Color3], [Carta4|Color4], [Carta5|Color5], [Carta6|Color6], [Carta7|Color7], Mano) :-
+    is_escalera([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7]),
+    cinco_mismo_palo([Color1, Color2, Color3, Color4, Color5, Color6, Color7]),
+    a_k_q_presentes([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7]),
+    Mano = "1", !.
+
+mano([Carta1|Color1], [Carta2|Color2], [Carta3|Color3], [Carta4|Color4], [Carta5|Color5], [Carta6|Color6], [Carta7|Color7], Mano) :-
+    is_escalera([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7]),
+    cinco_mismo_palo([Color1, Color2, Color3, Color4, Color5, Color6, Color7]),
+    Mano = "2", !.
+
+mano([Carta1|_], [Carta2|_], [Carta3|_], [Carta4|_], [Carta5|_], [Carta6|_], [Carta7|_], Mano) :-
+    contar_apariciones(_,[Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], 4),
+    Mano = "3", !.
+
+mano([Carta1|_], [Carta2|_], [Carta3|_], [Carta4|_], [Carta5|_], [Carta6|_], [Carta7|_], Mano) :-
+    tres_iguales([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], NumeroRepetido),
+    eliminar_elemento(NumeroRepetido, [Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], Resultado),
+    dos_iguales(Resultado, _),
+    Mano = "4", !.
+
+mano([_|Color1], [_|Color2], [_|Color3], [_|Color4], [_|Color5], [_|Color6], [_|Color7], Mano) :-
+    cinco_mismo_palo([Color1, Color2, Color3, Color4, Color5, Color6, Color7]),
+    Mano = "5", !.
+
+mano([Carta1|_], [Carta2|_], [Carta3|_], [Carta4|_], [Carta5|_], [Carta6|_], [Carta7|_], Mano) :-
+    is_escalera([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7]),
+    Mano = "6", !.
+
+mano([Carta1|_], [Carta2|_], [Carta3|_], [Carta4|_], [Carta5|_], [Carta6|_], [Carta7|_], Mano) :-
+    tres_iguales([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], _),
+    Mano = "7", !.
+
+mano([Carta1|_], [Carta2|_], [Carta3|_], [Carta4|_], [Carta5|_], [Carta6|_], [Carta7|_], Mano) :-
+    dos_iguales([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], NumeroRepetido),
+    eliminar_elemento(NumeroRepetido, [Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], Resultado),
+    dos_iguales(Resultado,_),
+    Mano = "8", !.
+
+mano([Carta1|_], [Carta2|_], [Carta3|_], [Carta4|_], [Carta5|_], [Carta6|_], [Carta7|_], Mano) :-
+    dos_iguales([Carta1, Carta2, Carta3, Carta4, Carta5, Carta6, Carta7], _),
+    Mano = "9", !.
+
+mano([_|_], [_|_], [_|_], [_|_], [_|_], [_|_], [_|_], Mano) :-
+    Mano = "10", !.
+
+is_escalera(Numeros) :-
+    sort(Numeros, NumerosOrdenados), 
+    length(NumerosOrdenados, Longitud),
+    Longitud >= 5,
+    consecutivos(NumerosOrdenados).
+
+consecutivos([2, 3, 4 , 5, _, _, 14]) :- !.
+consecutivos([2, 3, 4 , 5, _, 14]) :- !.
+consecutivos([2, 3, 4 , 5, 14]) :- !.
+consecutivos([A, B, C, D , E | _]) :- B is A + 1, C is A + 2, D is A + 3, E is A + 4, !.
+consecutivos([_ , A, B, C, D , E | _]) :- B is A + 1, C is A + 2, D is A + 3, E is A + 4, !.
+consecutivos([_ , _, A, B, C, D , E]) :- B is A + 1, C is A + 2, D is A + 3, E is A + 4, !.
+
+cinco_mismo_palo(Palos) :-
+    member(Color, Palos),
+    contar_apariciones(Color, Palos, Conteo),
+    Conteo >= 5, !.
+
+contar_apariciones(_, [], 0).
+contar_apariciones(Elemento, [Elemento|Resto], Conteo) :-
+    contar_apariciones(Elemento, Resto, ConteoResto),
+    Conteo is ConteoResto + 1.
+
+contar_apariciones(Elemento, [_|Resto], Conteo) :- contar_apariciones(Elemento, Resto, Conteo).
+a_k_q_presentes(Numeros) :- member(14, Numeros), member(13, Numeros), member(12, Numeros), !.
+
+tres_iguales(Numeros,NumeroRepetido) :- contar_apariciones(NumeroRepetido,Numeros,X), X >= 3.
+
+dos_iguales(Numeros, NumeroRepetido) :- contar_apariciones(NumeroRepetido,Numeros,X), X >= 2.
+
+eliminar_elemento(_, [], []).
+eliminar_elemento(Elem, [Elem|T], Resultado) :-
+    eliminar_elemento(Elem, T, Resultado).
+eliminar_elemento(Elem, [H|T], [H|Resultado]) :-
+    dif(H, Elem),
+    eliminar_elemento(Elem, T, Resultado).
